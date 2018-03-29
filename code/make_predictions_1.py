@@ -40,37 +40,35 @@ def transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT):
     return img
 
 
-'''
-Reading mean image, caffe model and its weights 
-'''
-#Read mean image
+print 'Reading mean image, caffe model and its weights'
 mean_blob = caffe_pb2.BlobProto()
-with open('/home/ubuntu/deeplearning-cats-dogs-tutorial/input/mean.binaryproto') as f:
+with open('/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/input/mean.binaryproto') as f:
     mean_blob.ParseFromString(f.read())
 mean_array = np.asarray(mean_blob.data, dtype=np.float32).reshape(
     (mean_blob.channels, mean_blob.height, mean_blob.width))
 
 
-#Read model architecture and trained model's weights
-net = caffe.Net('/home/ubuntu/deeplearning-cats-dogs-tutorial/caffe_models/caffe_model_1/caffenet_deploy_1.prototxt',
-                '/home/ubuntu/deeplearning-cats-dogs-tutorial/caffe_models/caffe_model_1/caffe_model_1_iter_10000.caffemodel',
+print 'Read model architecture and trained model\'s weights'
+net = caffe.Net('/home/alan/Downloads/deeplearning-cats-dogs-tutorial/caffe_models/caffe_model_1/caffenet_deploy_1.prototxt',
+                '/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/caffe_model_1/caffe_model_1_iter_10000.caffemodel',
                 caffe.TEST)
 
-#Define image transformers
+print 'Define image transformers'
 transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
 transformer.set_mean('data', mean_array)
 transformer.set_transpose('data', (2,0,1))
 
-'''
-Making predicitions
-'''
-#Reading image paths
-test_img_paths = [img_path for img_path in glob.glob("../input/test1/*jpg")]
+print 'Making predicitions'
 
-#Making predictions
-test_ids = []
-preds = []
+print 'Reading image paths'
+test_img_paths = list(glob.glob("/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/input/test1/*jpg"))
+output_img_dir = "/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/output/test1"
+if not os.path.exists(output_img_dir):
+    os.makedirs(output_img_dir)
+
+print 'Making predictions [{} images]'.format(len(test_img_paths))
 for img_path in test_img_paths:
+    print 'Making prediction for ' + img_path
     img = cv2.imread(img_path, cv2.IMREAD_COLOR)
     img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
     
@@ -78,18 +76,15 @@ for img_path in test_img_paths:
     out = net.forward()
     pred_probas = out['prob']
 
-    test_ids = test_ids + [img_path.split('/')[-1][:-4]]
-    preds = preds + [pred_probas.argmax()]
-
-    print img_path
-    print pred_probas.argmax()
-    print '-------'
-
-'''
-Making submission file
-'''
-with open("../caffe_models/caffe_model_1/submission_model_1.csv","w") as f:
-    f.write("id,label\n")
-    for i in range(len(test_ids)):
-        f.write(str(test_ids[i])+","+str(preds[i])+"\n")
-f.close()
+    prob = pred_probas.max()
+    label = 'cat' if pred_probas.argmax() == 0 else 'dog'
+    cv2.rectangle(img, (0,0), (100,20), (255,255,255), cv2.FILLED)
+    cv2.putText(img=img,
+                text='{}: {:.2f}%'.format(label, prob*100),
+                org=(0,15),
+                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=0.5,
+                color=(0,0,255),
+                thickness=2)
+    output_img_path = os.path.join(output_img_dir, os.path.basename(img_path))
+    cv2.imwrite(output_img_path, img)

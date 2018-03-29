@@ -21,9 +21,12 @@ import matplotlib.pylab as plt
 plt.style.use('ggplot')
 
 
-caffe_path = '/home/ubuntu/caffe/'
+caffe_path = '/home/alan/Downloads/caffe/'
 model_log_path = sys.argv[1]
 learning_curve_path = sys.argv[2]
+
+model_log_path = os.path.abspath(model_log_path)
+learning_curve_path = os.path.abspath(learning_curve_path)
 
 #Get directory where the model logs is saved, and move to it
 model_log_dir_path = os.path.dirname(model_log_path)
@@ -33,7 +36,8 @@ os.chdir(model_log_dir_path)
 Generating training and test logs
 '''
 #Parsing training/validation logs
-command = caffe_path + 'tools/extra/parse_log.sh ' + model_log_path
+command = os.path.join(caffe_path, 'tools/extra/parse_log.sh') + ' ' + model_log_path
+
 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 process.wait()
 #Read training and test logs
@@ -67,16 +71,16 @@ plt.title('Training Curve', fontsize=18)
 #Saving learning curve
 plt.savefig(learning_curve_path)
 
-'''
-Deleting training and test logs
-'''
-command = 'rm ' + train_log_path
-process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-process.wait()
+# '''
+# Deleting training and test logs
+# '''
+# command = 'rm ' + train_log_path
+# process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+# process.wait()
 
-command = command = 'rm ' + test_log_path
-process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-process.wait()
+# command = command = 'rm ' + test_log_path
+# process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+# process.wait()
 
 
 

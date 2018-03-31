@@ -42,15 +42,15 @@ def transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT):
 
 print 'Reading mean image, caffe model and its weights'
 mean_blob = caffe_pb2.BlobProto()
-with open('/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/input/mean.binaryproto') as f:
+with open('model_data/input/mean.binaryproto') as f:
     mean_blob.ParseFromString(f.read())
 mean_array = np.asarray(mean_blob.data, dtype=np.float32).reshape(
     (mean_blob.channels, mean_blob.height, mean_blob.width))
 
 
 print 'Read model architecture and trained model\'s weights'
-net = caffe.Net('/home/alan/Downloads/deeplearning-cats-dogs-tutorial/caffe_models/caffe_model_1/caffenet_deploy_1.prototxt',
-                '/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/caffe_model_1/caffe_model_1_iter_10000.caffemodel',
+net = caffe.Net('caffe_models/caffe_model_1/caffenet_deploy_1.prototxt',
+                'model_data/caffe_model_1/snapshots/caffe_model_1_iter_5000.caffemodel',
                 caffe.TEST)
 
 print 'Define image transformers'
@@ -61,8 +61,8 @@ transformer.set_transpose('data', (2,0,1))
 print 'Making predicitions'
 
 print 'Reading image paths'
-test_img_paths = list(glob.glob("/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/input/test1/*jpg"))
-output_img_dir = "/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/output/test1"
+test_img_paths = list(glob.glob("model_data/input/test1/*jpg"))
+output_img_dir = "model_data/output/test1"
 if not os.path.exists(output_img_dir):
     os.makedirs(output_img_dir)
 

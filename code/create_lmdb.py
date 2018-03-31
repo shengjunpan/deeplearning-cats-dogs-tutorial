@@ -46,15 +46,16 @@ def make_datum(img, label):
         label=label,
         data=np.rollaxis(img, 2).tostring())
 
-train_lmdb = '/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/input/train_lmdb'
-validation_lmdb = '/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/input/validation_lmdb'
+# Assuming current working directory is deeplearning-cats-dogs-tutorial
+train_lmdb = 'model_data/input/train_lmdb'
+validation_lmdb = 'model_data/input/validation_lmdb'
 
 os.system('rm -rf  ' + train_lmdb)
 os.system('rm -rf  ' + validation_lmdb)
 
 
-train_data = [img for img in glob.glob("/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/input/train/*jpg")]
-test_data = [img for img in glob.glob("/home/alan/Downloads/deeplearning-cats-dogs-tutorial/model_data/input/test1/*jpg")]
+train_data = [img for img in glob.glob("model_data/input/train/*jpg")]
+test_data = [img for img in glob.glob("model_data/input/test1/*jpg")]
 
 #Shuffle train_data
 random.shuffle(train_data)

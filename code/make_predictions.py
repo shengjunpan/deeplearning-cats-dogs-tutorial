@@ -1,15 +1,6 @@
-'''
-Title           :make_predictions_1.py
-Description     :This script makes predictions using the 1st trained model and generates a submission file.
-Author          :Adil Moujahid
-Date Created    :20160623
-Date Modified   :20160625
-version         :0.2
-usage           :python make_predictions_1.py
-python_version  :2.7.11
-'''
-
 import os
+import sys
+import re
 import glob
 import cv2
 import caffe
@@ -39,36 +30,60 @@ def transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT):
 
     return img
 
+suffix = '1'
+if len(sys.argv) > 1:
+    suffix = sys.argv[1]
+    
+limits = None
+if len(sys.argv) > 2:
+    limits = int(sys.argv[2])
 
-print 'Reading mean image, caffe model and its weights'
+print('Reading mean image, caffe model and its weights')
 mean_blob = caffe_pb2.BlobProto()
-with open('model_data/input/mean.binaryproto') as f:
+with open('model_data/input/mean.binaryproto', 'rb') as f:
     mean_blob.ParseFromString(f.read())
 mean_array = np.asarray(mean_blob.data, dtype=np.float32).reshape(
     (mean_blob.channels, mean_blob.height, mean_blob.width))
 
+glob_pattern = 'model_data/caffe_model_{0}/snapshots/caffe_model_{0}_iter_*.caffemodel'.format(suffix)
+match_pattern = 'model_data/caffe_model_{0}/snapshots/caffe_model_{0}_iter_([0-9]+).caffemodel'.format(suffix)
+models = glob.glob(glob_pattern)
+iter_matcher = re.compile(match_pattern)
+if models:
+    max_iter = None
+    for model in models:
+        m = iter_matcher.match(model)
+        if m:
+            iter = int(m.group(1))
+            if max_iter is None or iter > max_iter:
+                max_iter = iter
+    if max_iter is None:
+        raise Exception('No model found: ' + match_pattern)
+    else:
+        model_file = model
+        print('model file:', model_file)
+else:
+    raise Exception('No model found: ' + glob_pattern)
 
-print 'Read model architecture and trained model\'s weights'
-net = caffe.Net('caffe_models/caffe_model_1/caffenet_deploy_1.prototxt',
-                'model_data/caffe_model_1/snapshots/caffe_model_1_iter_5000.caffemodel',
+print('Read model architecture and trained model\'s weights')
+net = caffe.Net('caffe_models/caffe_model_{0}/caffenet_deploy_{0}.prototxt'.format(suffix),
+                model_file,
                 caffe.TEST)
 
-print 'Define image transformers'
+print('Define image transformers')
 transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
 transformer.set_mean('data', mean_array)
 transformer.set_transpose('data', (2,0,1))
 
-print 'Making predicitions'
+print('Making predicitions')
 
-print 'Reading image paths'
+print('Reading image paths')
 test_img_paths = list(glob.glob("model_data/input/test1/*jpg"))
-output_img_dir = "model_data/output/test1"
+output_img_dir = 'model_data/caffe_model_{}/predictions'.format(suffix)
 if not os.path.exists(output_img_dir):
     os.makedirs(output_img_dir)
 
-print 'Making predictions [{} images]'.format(len(test_img_paths))
-for img_path in test_img_paths:
-    print 'Making prediction for ' + img_path
+for img_path in test_img_paths[:limits]:
     img = cv2.imread(img_path, cv2.IMREAD_COLOR)
     img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
     
@@ -88,3 +103,4 @@ for img_path in test_img_paths:
                 thickness=2)
     output_img_path = os.path.join(output_img_dir, os.path.basename(img_path))
     cv2.imwrite(output_img_path, img)
+    print('Saved prediction to', output_img_path)

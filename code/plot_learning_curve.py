@@ -21,12 +21,14 @@ import matplotlib.pylab as plt
 plt.style.use('ggplot')
 
 
-caffe_path = '/home/alan/Downloads/caffe/'
-model_log_path = sys.argv[1]
-learning_curve_path = sys.argv[2]
-
-model_log_path = os.path.abspath(model_log_path)
-learning_curve_path = os.path.abspath(learning_curve_path)
+model_log_path = os.path.abspath(sys.argv[1])
+learning_curve_path = os.path.abspath(sys.argv[2])
+if 'CAFFE_HOME' in os.environ:
+    caffe_home = os.environ['CAFFE_HOME']
+elif len(sys.argv) > 3:
+    caffe_home = os.path.abspath(sys.argv[3])
+else:
+    raise Exception('Caffe home directory not given')
 
 #Get directory where the model logs is saved, and move to it
 model_log_dir_path = os.path.dirname(model_log_path)
@@ -36,7 +38,7 @@ os.chdir(model_log_dir_path)
 Generating training and test logs
 '''
 #Parsing training/validation logs
-command = os.path.join(caffe_path, 'tools/extra/parse_log.sh') + ' ' + model_log_path
+command = os.path.join(caffe_home, 'tools/extra/parse_log.sh') + ' ' + model_log_path
 
 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 process.wait()
@@ -69,18 +71,15 @@ ax2.tick_params(labelsize=15)
 plt.legend([train_loss, test_loss, test_accuracy], ['Training Loss', 'Test Loss', 'Test Accuracy'],  bbox_to_anchor=(1, 0.8))
 plt.title('Training Curve', fontsize=18)
 #Saving learning curve
-plt.savefig(learning_curve_path)
+plt.savefig(learning_curve_path, bbox_inches='tight')
 
-# '''
-# Deleting training and test logs
-# '''
-# command = 'rm ' + train_log_path
-# process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-# process.wait()
+'''
+Deleting training and test logs
+'''
+command = 'rm ' + train_log_path
+process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+process.wait()
 
-# command = command = 'rm ' + test_log_path
-# process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-# process.wait()
-
-
-
+command = command = 'rm ' + test_log_path
+process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+process.wait()

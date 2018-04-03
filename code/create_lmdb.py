@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 '''
 Title           :create_lmdb.py
 Description     :This script divides the training images into 2 sets and stores them in lmdb databases for training and validation.
@@ -60,41 +62,34 @@ test_data = [img for img in glob.glob("model_data/input/test1/*jpg")]
 #Shuffle train_data
 random.shuffle(train_data)
 
-print 'Creating train_lmdb'
+print('Creating train_lmdb and validation_lmdb ..')
 
-in_db = lmdb.open(train_lmdb, map_size=int(1e12))
-with in_db.begin(write=True) as in_txn:
-    for in_idx, img_path in enumerate(train_data):
-        if in_idx %  6 == 0:
-            continue
-        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
-        if 'cat' in img_path:
-            label = 0
-        else:
-            label = 1
-        datum = make_datum(img, label)
-        in_txn.put('{:0>5d}'.format(in_idx), datum.SerializeToString())
-        print '{:0>5d}'.format(in_idx) + ':' + img_path
-in_db.close()
+num_train = 0
+num_test = 0
+in_db_train = lmdb.open(train_lmdb, map_size=int(1e12))
+in_db_test = lmdb.open(validation_lmdb, map_size=int(1e12))
+with in_db_train.begin(write=True) as in_txn_train:
+    with in_db_test.begin(write=True) as in_txn_test:
+        for in_idx, img_path in enumerate(train_data):
+            if in_idx %  6 == 0:
+                in_txn = in_txn_test
+                num_test += 1
+            else:
+                in_txn = in_txn_train
+                num_train += 1
 
+            img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+            img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
+            if 'cat' in img_path:
+                label = 0
+            else:
+                label = 1
+            datum = make_datum(img, label)
+            key = '{:0>5d}'.format(in_idx)
+            value = datum.SerializeToString()
+            in_txn.put(key.encode(), value)
+            print(key + ':' + img_path)
+in_db_train.close()
+in_db_test.close()
 
-print '\nCreating validation_lmdb'
-
-in_db = lmdb.open(validation_lmdb, map_size=int(1e12))
-with in_db.begin(write=True) as in_txn:
-    for in_idx, img_path in enumerate(train_data):
-        if in_idx % 6 != 0:
-            continue
-        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
-        if 'cat' in img_path:
-            label = 0
-        else:
-            label = 1
-        datum = make_datum(img, label)
-        in_txn.put('{:0>5d}'.format(in_idx), datum.SerializeToString())
-        print '{:0>5d}'.format(in_idx) + ':' + img_path
-in_db.close()
-
-print '\nFinished processing all images'
+print('\nFinished processing all images: {} train, {} test'.format(num_train, num_test))

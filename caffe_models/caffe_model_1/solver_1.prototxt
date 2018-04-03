@@ -1,10 +1,10 @@
 net: "caffe_models/caffe_model_1/caffenet_train_val_1.prototxt"
-test_iter: 100
+test_iter: 65
 test_interval: 500
 base_lr: 0.002
 lr_policy: "step"
-gamma: 0.6
-stepsize: 500
+gamma: 0.1
+stepsize: 2500
 display: 50
 max_iter: 5000
 momentum: 0.9

@@ -71,6 +71,9 @@ ax2.tick_params(labelsize=15)
 plt.legend([train_loss, test_loss, test_accuracy], ['Training Loss', 'Test Loss', 'Test Accuracy'],  bbox_to_anchor=(1, 0.8))
 plt.title('Training Curve', fontsize=18)
 #Saving learning curve
+save_path = os.path.dirname(learning_curve_path)
+if not os.path.exists(save_path):
+    os.makedirs(save_path)
 plt.savefig(learning_curve_path, bbox_inches='tight')
 
 '''
